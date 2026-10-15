@@ -1,0 +1,39 @@
+name: Indian market morning report
+
+on:
+  schedule:
+    # 03:30 UTC = 09:00 IST, every day.
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+    inputs:
+      test_only:
+        description: 'Send a Telegram connection test without using Gemini'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: indian-market-report
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify report logic
+        run: python -m unittest discover -s tests -v
+      - name: Research and send report
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL || 'gemini-3.5-flash-lite' }}
+          TEST_ONLY: ${{ inputs.test_only || 'false' }}
+        run: python market_agent.py
