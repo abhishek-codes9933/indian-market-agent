@@ -1,0 +1,6 @@
+.env
+.env.*
+*.token
+__pycache__/
+market-report.txt
+*.zip
